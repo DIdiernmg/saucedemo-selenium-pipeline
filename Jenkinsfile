@@ -2,22 +2,22 @@ pipeline {
     agent any
 
     tools {
-        // Asegúrate de que estos nombres coincidan con los de tu Jenkins -> Global Tool Configuration
-        maven 'maven-3.9.6'
-        jdk 'java-17'
+        // Nombres corregidos para que coincidan EXACTAMENTE con tu Jenkins
+        maven 'Maven_3.9.6' 
+        jdk 'Java_17'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Descarga el código desde GitHub
+                // Descarga el código desde el nuevo repositorio de SauceDemo
                 checkout scm
             }
         }
 
         stage('Build & Test') {
             steps {
-                // Ejecuta la limpieza y los tests de TestNG
+                // Ejecuta la limpieza y los tests de TestNG en Windows
                 bat 'mvn clean test'
             }
         }
@@ -25,7 +25,7 @@ pipeline {
 
     post {
         always {
-            // Genera el reporte de Allure independientemente de si el test pasó o falló
+            // Genera el reporte de Allure pase lo que pase
             script {
                 allure includeProperties: false, jdk: '', results: [[path: 'target/allure-results']]
             }
