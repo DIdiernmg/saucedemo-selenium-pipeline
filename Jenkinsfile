@@ -1,8 +1,14 @@
 pipeline {
     agent any
 
+    // Disparadores: Configura a Jenkins para que trabaje solo
+    triggers {
+        // Revisa GitHub cada 2 minutos. La 'H' distribuye la carga del servidor.
+        pollSCM('H/2 * * * *') 
+    }
+
     tools {
-        // Nombres corregidos para que coincidan EXACTAMENTE con tu Jenkins
+        // Estos nombres deben coincidir exactamente con tu 'Global Tool Configuration'
         maven 'Maven_3.9.6' 
         jdk 'Java_17'
     }
@@ -10,14 +16,16 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // Descarga el código desde el nuevo repositorio de SauceDemo
+                // Descarga el código fuente desde tu repositorio en GitHub
                 checkout scm
             }
         }
 
-        stage('Build & Test') {
+        stage('Limpieza y Build') {
             steps {
-                // Ejecuta la limpieza y los tests de TestNG en Windows
+                // 'bat' se usa para ejecutar comandos de Windows (CMD)
+                // mvn clean: borra la carpeta target anterior
+                // mvn test: compila y ejecuta las pruebas de TestNG
                 bat 'mvn clean test'
             }
         }
@@ -25,8 +33,9 @@ pipeline {
 
     post {
         always {
-            // Genera el reporte de Allure pase lo que pase
+            // Esta sección se ejecuta siempre, sin importar si el test pasó o falló
             script {
+                // Genera el reporte de Allure usando los resultados en target/allure-results
                 allure includeProperties: false, jdk: '', results: [[path: 'target/allure-results']]
             }
         }
