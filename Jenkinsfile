@@ -1,14 +1,13 @@
 pipeline {
     agent any
 
-    // Disparadores: Configura a Jenkins para que trabaje solo
+    // 1. Disparador: Revisa GitHub cada 2 minutos en busca de cambios
     triggers {
-        // Revisa GitHub cada 2 minutos. La 'H' distribuye la carga del servidor.
         pollSCM('H/2 * * * *') 
     }
 
+    // 2. Herramientas: Configuración exacta de tu Jenkins local
     tools {
-        // Estos nombres deben coincidir exactamente con tu 'Global Tool Configuration'
         maven 'Maven_3.9.6' 
         jdk 'Java_17'
     }
@@ -16,26 +15,35 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // Descarga el código fuente desde tu repositorio en GitHub
+                // Descarga el código desde el repositorio actual
                 checkout scm
             }
         }
 
-        stage('Limpieza y Build') {
+        stage('Build & Test') {
             steps {
-                // 'bat' se usa para ejecutar comandos de Windows (CMD)
-                // mvn clean: borra la carpeta target anterior
-                // mvn test: compila y ejecuta las pruebas de TestNG
+                // Ejecuta la limpieza y los tests de SauceDemo
                 bat 'mvn clean test'
             }
         }
     }
 
+    // 3. Post-acciones: Generación de reportes y metadatos
     post {
         always {
-            // Esta sección se ejecuta siempre, sin importar si el test pasó o falló
             script {
-                // Genera el reporte de Allure usando los resultados en target/allure-results
+                // Recupera la sección 'Environment' en Allure
+                // Se crean las propiedades dinámicamente antes de generar el reporte
+                bat """
+                if not exist "target\\allure-results" mkdir "target\\allure-results"
+                echo Browser=Chrome > target/allure-results/environment.properties
+                echo Tester=Didier Marin (Tiko) >> target/allure-results/environment.properties
+                echo OS=Windows 11 >> target/allure-results/environment.properties
+                echo Project=SauceDemo-Automation-QA >> target/allure-results/environment.properties
+                echo Java_Version=17 >> target/allure-results/environment.properties
+                """
+                
+                // Genera el reporte visual para Anthology
                 allure includeProperties: false, jdk: '', results: [[path: 'target/allure-results']]
             }
         }
